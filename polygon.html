@@ -16,43 +16,63 @@
 </head>
 
 <body>
-<div id="map"></div>
+<div id="map" style="height:100vh; width:100%;"></div>
 
 <script>
-  function getParam(name) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return parseFloat(urlParams.get(name));
+function getParam(name) {
+  return new URLSearchParams(window.location.search).get(name);
+}
+
+// Get raw path
+let raw = getParam("path");
+
+// Safety check
+if (!raw) {
+  document.body.innerHTML = "<h3 style='font-family:Arial;padding:20px;'>No coordinates received</h3>";
+} else {
+
+  // Decode + clean spaces
+  raw = decodeURIComponent(raw).replace(/\s/g, "");
+
+  // Convert into array
+  const arr = raw.split(",");
+
+  let points = [];
+
+  // Convert pairs → [lat, lng]
+  for (let i = 0; i < arr.length; i += 2) {
+    const lat = parseFloat(arr[i]);
+    const lng = parseFloat(arr[i + 1]);
+
+    if (!isNaN(lat) && !isNaN(lng)) {
+      points.push([lat, lng]);
+    }
   }
 
-  const lat1 = getParam("lat1");
-  const lon1 = getParam("lon1");
-  const lat2 = getParam("lat2");
-  const lon2 = getParam("lon2");
-  const lat3 = getParam("lat3");
-  const lon3 = getParam("lon3");
-  const lat4 = getParam("lat4");
-  const lon4 = getParam("lon4");
+  // Check minimum points
+  if (points.length < 3) {
+    document.body.innerHTML = "<h3 style='font-family:Arial;padding:20px;'>Not enough points to form polygon</h3>";
+  } else {
 
-  const polygonPoints = [
-    [lat1, lon1],
-    [lat2, lon2],
-    [lat3, lon3],
-    [lat4, lon4]
-  ];
+    // Create map
+    const map = L.map('map').setView(points[0], 18);
 
-  const map = L.map('map').setView([lat1, lon1], 18);
+    // Base map layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors'
-  }).addTo(map);
+    // Draw polygon
+    const polygon = L.polygon(points, {
+      color: "blue",
+      fillColor: "cyan",
+      fillOpacity: 0.4
+    }).addTo(map);
 
-  const polygon = L.polygon(polygonPoints, {
-    color: "blue",
-    fillColor: "cyan",
-    fillOpacity: 0.4
-  }).addTo(map);
-
-  map.fitBounds(polygon.getBounds());
+    // Fit map to shape
+    map.fitBounds(polygon.getBounds());
+  }
+}
 </script>
 
 </body>
