@@ -23,53 +23,42 @@ function getParam(name) {
   return new URLSearchParams(window.location.search).get(name);
 }
 
-// Get raw path
-let raw = getParam("path");
+const raw = decodeURIComponent(getParam("path") || "");
 
-// Safety check
 if (!raw) {
-  document.body.innerHTML = "<h3 style='font-family:Arial;padding:20px;'>No coordinates received</h3>";
+  document.body.innerHTML = "<h3>No data received</h3>";
 } else {
 
-  // Decode + clean spaces
-  raw = decodeURIComponent(raw).replace(/\s/g, "");
-
-  // Convert into array
-  const arr = raw.split(",");
+  const arr = raw.split(",").filter(x => x !== "");
 
   let points = [];
 
-  // Convert pairs → [lat, lng]
-  for (let i = 0; i < arr.length; i += 2) {
-    const lat = parseFloat(arr[i]);
-    const lng = parseFloat(arr[i + 1]);
+  for (let i = 0; i < arr.length - 1; i += 2) {
+
+    const lat = parseFloat(arr[i].trim());
+    const lng = parseFloat(arr[i + 1].trim());
 
     if (!isNaN(lat) && !isNaN(lng)) {
       points.push([lat, lng]);
     }
   }
 
-  // Check minimum points
   if (points.length < 3) {
-    document.body.innerHTML = "<h3 style='font-family:Arial;padding:20px;'>Not enough points to form polygon</h3>";
+    document.body.innerHTML = "<h3>Not enough points to form polygon</h3>";
   } else {
 
-    // Create map
     const map = L.map('map').setView(points[0], 18);
 
-    // Base map layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    // Draw polygon
     const polygon = L.polygon(points, {
       color: "blue",
       fillColor: "cyan",
       fillOpacity: 0.4
     }).addTo(map);
 
-    // Fit map to shape
     map.fitBounds(polygon.getBounds());
   }
 }
